@@ -25,6 +25,8 @@ import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
 import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.codec.LineBasedFrameDecoder;
+import io.netty.handler.codec.bytes.ByteArrayDecoder;
+import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.codec.string.StringDecoder;
 import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -35,7 +37,7 @@ public class NettyTcpClientUtil {
     private static final String TAG = "NettyTcpClient";
 
     private EventLoopGroup group;
-    private NettyClientListener<byte[]> listener;
+    private NettyClientListener listener;
     private Channel channel;
     private boolean isConnect = false;
 
@@ -121,9 +123,8 @@ public class NettyTcpClientUtil {
                                 } else {
                                     ch.pipeline().addLast(new LineBasedFrameDecoder(maxPacketLong));
                                 }
-                                ch.pipeline().addLast(new StringEncoder(CharsetUtil.UTF_8));
-                                ch.pipeline().addLast(new StringDecoder(CharsetUtil.UTF_8));
-
+                                ch.pipeline().addLast(new ByteArrayEncoder());
+                                ch.pipeline().addLast(new ByteArrayDecoder());
 
                                 ch.pipeline().addLast(new NettyClientHandler(listener, mIndex, isSendHeartBeat, heartBeatData, packetSeparator));
                             }
@@ -203,7 +204,7 @@ public class NettyTcpClientUtil {
         }
     }
 
-    public void setListener(NettyClientListener<byte[]> listener) {
+    public void setListener(NettyClientListener listener) {
         this.listener = listener;
     }
 

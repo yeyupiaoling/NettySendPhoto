@@ -4,6 +4,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.yeyupiaoling.server.handle.EchoServerHandler;
+import com.yeyupiaoling.server.listener.MessageStateListener;
 import com.yeyupiaoling.server.listener.NettyServerListener;
 
 import java.net.InetSocketAddress;
@@ -24,12 +25,6 @@ import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
-import io.netty.handler.codec.serialization.ClassResolvers;
-import io.netty.handler.codec.serialization.ObjectDecoder;
-import io.netty.handler.codec.serialization.ObjectEncoder;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
-import io.netty.util.CharsetUtil;
 
 
 /**
@@ -83,7 +78,7 @@ public class NettyTcpServer {
                                 @Override
                                 public void initChannel(SocketChannel ch) throws Exception {
                                     if (!TextUtils.isEmpty(packetSeparator)) {
-                                        ByteBuf delimiter= Unpooled.buffer();
+                                        ByteBuf delimiter = Unpooled.buffer();
                                         delimiter.writeBytes(packetSeparator.getBytes());
                                         ch.pipeline().addLast(new DelimiterBasedFrameDecoder(maxPacketLong, delimiter));
                                     } else {
@@ -120,15 +115,25 @@ public class NettyTcpServer {
         bossGroup.shutdownGracefully();
     }
 
-    // 异步发送消息
-    public boolean sendMsgToServer(String data, ChannelFutureListener listener) {
+    /**
+     * 异步发送
+     *
+     * @param data     要发送的数据
+     * @param listener 发送结果回调
+     */
+    public void sendDataToClient(byte[] data, MessageStateListener listener) {
         boolean flag = channel != null && channel.isActive();
-        String separator = TextUtils.isEmpty(packetSeparator) ? System.getProperty("line.separator") : packetSeparator;
+        ByteBuf buf = Unpooled.copiedBuffer(data);
         if (flag) {
-            channel.writeAndFlush(data + separator).addListener(listener);
+            channel.writeAndFlush(buf).addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                    listener.isSendSuccess(channelFuture.isSuccess());
+                }
+            });
         }
-        return flag;
     }
+
 
     /**
      * 切换通道

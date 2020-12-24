@@ -1,7 +1,5 @@
 package com.yeyupiaoling.nettysendphoto;
 
-import androidx.appcompat.app.AppCompatActivity;
-
 import android.content.ContentResolver;
 import android.content.Intent;
 import android.net.Uri;
@@ -10,16 +8,18 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AppCompatActivity;
+
+import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
 import com.yeyupiaoling.nettysendphoto.constant.Const;
 import com.yeyupiaoling.nettysendphoto.listener.MessageStateListener;
 import com.yeyupiaoling.nettysendphoto.listener.NettyClientListener;
-import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
 import com.yeyupiaoling.nettysendphoto.utils.NettyTcpClientUtil;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-public class MainActivity extends AppCompatActivity implements NettyClientListener<byte[]> {
+public class MainActivity extends AppCompatActivity implements NettyClientListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private NettyTcpClientUtil mNettyTcpClientUtil;
 
@@ -108,7 +108,12 @@ public class MainActivity extends AppCompatActivity implements NettyClientListen
     public void onMessageResponseClient(byte[] data, int index) {
         String msg = new String(data, StandardCharsets.UTF_8);
         Log.e(TAG, "onMessageResponse:" + msg);
-        Toast.makeText(this, "接收到消息：" + msg, Toast.LENGTH_SHORT).show();
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                Toast.makeText(MainActivity.this, "接收到消息：" + msg, Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
     @Override

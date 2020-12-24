@@ -10,6 +10,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.yeyupiaoling.server.listener.MessageStateListener;
 import com.yeyupiaoling.server.listener.NettyServerListener;
 import com.yeyupiaoling.server.utils.NettyTcpServer;
 
@@ -39,11 +40,13 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
         findViewById(R.id.sendText).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                String msg = "我是服务器端";
-                NettyTcpServer.getInstance().sendMsgToServer(msg, new ChannelFutureListener() {
+                // 要加上分割符
+                String msg = "我是服务器端" + System.getProperty("line.separator") ;
+                byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+                NettyTcpServer.getInstance().sendDataToClient(data, new MessageStateListener() {
                     @Override
-                    public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                        if (channelFuture.isSuccess()) {
+                    public void isSendSuccess(boolean isSuccess) {
+                        if (isSuccess) {
                             Log.d(TAG, "发送成功");
                         } else {
                             Log.d(TAG, "发送失败");
@@ -122,7 +125,7 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(MainActivity.this, socketStr + " 建立连接", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, socketStr + " 建立连接", Toast.LENGTH_SHORT).show();
             }
         });
     }
@@ -134,7 +137,7 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
         runOnUiThread(new Runnable() {
             @Override
             public void run() {
-                Toast.makeText(MainActivity.this, socketStr + " 断开连接", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, socketStr + " 断开连接", Toast.LENGTH_SHORT).show();
             }
         });
     }
