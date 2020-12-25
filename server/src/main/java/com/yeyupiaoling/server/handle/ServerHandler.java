@@ -3,8 +3,7 @@ package com.yeyupiaoling.server.handle;
 import android.util.Log;
 
 import com.yeyupiaoling.server.constant.Const;
-import com.yeyupiaoling.server.listener.NettyServerListener;
-import com.yeyupiaoling.server.utils.NettyTcpServer;
+import com.yeyupiaoling.server.listener.ServerListener;
 
 import java.nio.charset.StandardCharsets;
 
@@ -14,12 +13,12 @@ import io.netty.channel.SimpleChannelInboundHandler;
 
 
 @ChannelHandler.Sharable
-public class EchoServerHandler extends SimpleChannelInboundHandler<byte[]> {
+public class ServerHandler extends SimpleChannelInboundHandler<byte[]> {
 
-    private static final String TAG = EchoServerHandler.class.getSimpleName();
-    private final NettyServerListener mListener;
+    private static final String TAG = ServerHandler.class.getSimpleName();
+    private final ServerListener mListener;
 
-    public EchoServerHandler(NettyServerListener listener) {
+    public ServerHandler(ServerListener listener) {
         this.mListener = listener;
     }
 

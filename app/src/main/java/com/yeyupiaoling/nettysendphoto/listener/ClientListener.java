@@ -2,7 +2,7 @@ package com.yeyupiaoling.nettysendphoto.listener;
 
 
 // Netty状态变化监听
-public interface NettyClientListener {
+public interface ClientListener {
 
     /**
      * 当接收到系统消息

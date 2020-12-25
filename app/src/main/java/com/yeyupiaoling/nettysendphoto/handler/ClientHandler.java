@@ -4,7 +4,7 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
-import com.yeyupiaoling.nettysendphoto.listener.NettyClientListener;
+import com.yeyupiaoling.nettysendphoto.listener.ClientListener;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -14,20 +14,20 @@ import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 
 
-public class NettyClientHandler extends SimpleChannelInboundHandler<byte[]> {
+public class ClientHandler extends SimpleChannelInboundHandler<byte[]> {
 
-    private static final String TAG = NettyClientHandler.class.getSimpleName();
+    private static final String TAG = ClientHandler.class.getSimpleName();
     private final boolean isSendHeartBeat;
-    private final NettyClientListener listener;
+    private final ClientListener listener;
     private final int index;
     private final Object heartBeatData;
     private final String packetSeparator;
 
-    public NettyClientHandler(NettyClientListener listener, int index, boolean isSendHeartBeat, Object heartBeatData) {
+    public ClientHandler(ClientListener listener, int index, boolean isSendHeartBeat, Object heartBeatData) {
         this(listener,index,isSendHeartBeat,heartBeatData,null);
     }
 
-    public NettyClientHandler(NettyClientListener listener, int index, boolean isSendHeartBeat, Object heartBeatData,String separator) {
+    public ClientHandler(ClientListener listener, int index, boolean isSendHeartBeat, Object heartBeatData, String separator) {
         this.listener = listener;
         this.index = index;
         this.isSendHeartBeat = isSendHeartBeat;

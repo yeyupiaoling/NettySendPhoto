@@ -5,9 +5,9 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
-import com.yeyupiaoling.nettysendphoto.handler.NettyClientHandler;
+import com.yeyupiaoling.nettysendphoto.handler.ClientHandler;
 import com.yeyupiaoling.nettysendphoto.listener.MessageStateListener;
-import com.yeyupiaoling.nettysendphoto.listener.NettyClientListener;
+import com.yeyupiaoling.nettysendphoto.listener.ClientListener;
 
 import java.util.concurrent.TimeUnit;
 
@@ -30,11 +30,11 @@ import io.netty.handler.codec.bytes.ByteArrayEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
 
 
-public class NettyTcpClientUtil {
+public class NettyClientUtil {
     private static final String TAG = "NettyTcpClient";
 
     private EventLoopGroup group;
-    private NettyClientListener listener;
+    private ClientListener listener;
     private Channel channel;
     private boolean isConnect = false;
 
@@ -71,7 +71,7 @@ public class NettyTcpClientUtil {
     private String packetSeparator;
     private int maxPacketLong = 1024;
 
-    private NettyTcpClientUtil(String host, int tcpPort, int index) {
+    private NettyClientUtil(String host, int tcpPort, int index) {
         this.host = host;
         this.tcpPort = tcpPort;
         this.mIndex = index;
@@ -95,7 +95,7 @@ public class NettyTcpClientUtil {
 
 
     private void connectServer() {
-        synchronized (NettyTcpClientUtil.this) {
+        synchronized (NettyClientUtil.this) {
             ChannelFuture channelFuture = null;
             if (!isConnect) {
                 isConnecting = true;
@@ -123,7 +123,7 @@ public class NettyTcpClientUtil {
                                 ch.pipeline().addLast(new ByteArrayEncoder());
                                 ch.pipeline().addLast(new ByteArrayDecoder());
 
-                                ch.pipeline().addLast(new NettyClientHandler(listener, mIndex, isSendHeartBeat, heartBeatData, packetSeparator));
+                                ch.pipeline().addLast(new ClientHandler(listener, mIndex, isSendHeartBeat, heartBeatData, packetSeparator));
                             }
                         });
 
@@ -195,7 +195,7 @@ public class NettyTcpClientUtil {
         }
     }
 
-    public void setListener(NettyClientListener listener) {
+    public void setListener(ClientListener listener) {
         this.listener = listener;
     }
 
@@ -299,16 +299,16 @@ public class NettyTcpClientUtil {
             return this;
         }
 
-        public NettyTcpClientUtil build() {
-            NettyTcpClientUtil nettyTcpClientUtil = new NettyTcpClientUtil(host, tcp_port, mIndex);
-            nettyTcpClientUtil.MAX_CONNECT_TIMES = this.MAX_CONNECT_TIMES;
-            nettyTcpClientUtil.reconnectIntervalTime = this.reconnectIntervalTime;
-            nettyTcpClientUtil.heartBeatInterval = this.heartBeatInterval;
-            nettyTcpClientUtil.isSendHeartBeat = this.isSendHeartBeat;
-            nettyTcpClientUtil.heartBeatData = this.heartBeatData;
-            nettyTcpClientUtil.packetSeparator = this.packetSeparator;
-            nettyTcpClientUtil.maxPacketLong = this.maxPacketLong;
-            return nettyTcpClientUtil;
+        public NettyClientUtil build() {
+            NettyClientUtil nettyClientUtil = new NettyClientUtil(host, tcp_port, mIndex);
+            nettyClientUtil.MAX_CONNECT_TIMES = this.MAX_CONNECT_TIMES;
+            nettyClientUtil.reconnectIntervalTime = this.reconnectIntervalTime;
+            nettyClientUtil.heartBeatInterval = this.heartBeatInterval;
+            nettyClientUtil.isSendHeartBeat = this.isSendHeartBeat;
+            nettyClientUtil.heartBeatData = this.heartBeatData;
+            nettyClientUtil.packetSeparator = this.packetSeparator;
+            nettyClientUtil.maxPacketLong = this.maxPacketLong;
+            return nettyClientUtil;
         }
     }
 }

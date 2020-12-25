@@ -1,6 +1,5 @@
 package com.yeyupiaoling.server;
 
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
@@ -12,37 +11,35 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.yeyupiaoling.server.constant.Const;
 import com.yeyupiaoling.server.listener.MessageStateListener;
-import com.yeyupiaoling.server.listener.NettyServerListener;
-import com.yeyupiaoling.server.utils.NettyTcpServer;
+import com.yeyupiaoling.server.listener.ServerListener;
+import com.yeyupiaoling.server.utils.NettyServerUtil;
 
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 import io.netty.channel.Channel;
-import io.netty.channel.ChannelFuture;
-import io.netty.channel.ChannelFutureListener;
 
-public class MainActivity extends AppCompatActivity implements NettyServerListener {
+public class MainActivity extends AppCompatActivity implements ServerListener {
     private static final String TAG = MainActivity.class.getSimpleName();
     private final List<Channel> channelList = new ArrayList<>();
     private AlertDialog alertDialog1;
-    private NettyTcpServer nettyTcpServer;
+    private NettyServerUtil nettyServerUtil;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        nettyTcpServer = NettyTcpServer.getInstance(Const.PACKET_SEPARATOR);
-        nettyTcpServer.setListener(MainActivity.this);
-        nettyTcpServer.start();
+        nettyServerUtil = NettyServerUtil.getInstance(Const.PACKET_SEPARATOR);
+        nettyServerUtil.setListener(MainActivity.this);
+        nettyServerUtil.start();
 
         findViewById(R.id.sendText).setOnClickListener(view -> {
             // 要加上分割符
             String msg = "我是服务器端" + System.getProperty("line.separator") ;
             byte[] data = msg.getBytes(StandardCharsets.UTF_8);
-            NettyTcpServer.getInstance(Const.PACKET_SEPARATOR).sendDataToClient(data, new MessageStateListener() {
+            NettyServerUtil.getInstance(Const.PACKET_SEPARATOR).sendDataToClient(data, new MessageStateListener() {
                 @Override
                 public void isSendSuccess(boolean isSuccess) {
                     if (isSuccess) {
@@ -72,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
                 alertBuilder.setTitle("选择客户端");
                 alertBuilder.setItems(items, (dialogInterface, i) -> {
-                    nettyTcpServer.selectorChannel(channelList.get(i));
+                    nettyServerUtil.selectorChannel(channelList.get(i));
                     alertDialog1.dismiss();
                 });
                 alertDialog1 = alertBuilder.create();
@@ -83,7 +80,7 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
 
     @Override
     protected void onDestroy() {
-        NettyTcpServer.getInstance(Const.PACKET_SEPARATOR).disconnect();
+        NettyServerUtil.getInstance(Const.PACKET_SEPARATOR).disconnect();
         super.onDestroy();
     }
 
@@ -107,7 +104,7 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
     @Override
     public void onChannelConnect(final Channel channel) {
         channelList.add(channel);
-        nettyTcpServer.selectorChannel(channel);
+        nettyServerUtil.selectorChannel(channel);
         String socketStr = channel.remoteAddress().toString();
         runOnUiThread(() -> Toast.makeText(MainActivity.this, socketStr + " 建立连接", Toast.LENGTH_SHORT).show());
     }

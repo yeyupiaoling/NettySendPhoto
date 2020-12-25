@@ -4,9 +4,9 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.yeyupiaoling.server.constant.Const;
-import com.yeyupiaoling.server.handle.EchoServerHandler;
+import com.yeyupiaoling.server.handle.ServerHandler;
 import com.yeyupiaoling.server.listener.MessageStateListener;
-import com.yeyupiaoling.server.listener.NettyServerListener;
+import com.yeyupiaoling.server.listener.ServerListener;
 
 import java.net.InetSocketAddress;
 
@@ -32,12 +32,12 @@ import io.netty.handler.codec.bytes.ByteArrayEncoder;
  * TCP 服务端
  * 目前服务端支持连接多个客户端
  */
-public class NettyTcpServer {
-    private static final String TAG = NettyTcpServer.class.getSimpleName();
+public class NettyServerUtil {
+    private static final String TAG = NettyServerUtil.class.getSimpleName();
     private Channel channel;
 
-    private static NettyTcpServer instance = null;
-    private NettyServerListener listener;
+    private static NettyServerUtil instance = null;
+    private ServerListener listener;
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
 
@@ -45,18 +45,18 @@ public class NettyTcpServer {
     private final int maxPacketLong = 1024;
 
 
-    public static NettyTcpServer getInstance(String packetSeparator) {
+    public static NettyServerUtil getInstance(String packetSeparator) {
         if (instance == null) {
-            synchronized (NettyTcpServer.class) {
+            synchronized (NettyServerUtil.class) {
                 if (instance == null) {
-                    instance = new NettyTcpServer(packetSeparator);
+                    instance = new NettyServerUtil(packetSeparator);
                 }
             }
         }
         return instance;
     }
 
-    private NettyTcpServer(String packetSeparator) {
+    private NettyServerUtil(String packetSeparator) {
         this.packetSeparator = packetSeparator;
     }
 
@@ -89,7 +89,7 @@ public class NettyTcpServer {
                                     ch.pipeline().addLast(new ByteArrayEncoder());
                                     ch.pipeline().addLast(new ByteArrayDecoder());
 
-                                    ch.pipeline().addLast(new EchoServerHandler(listener));
+                                    ch.pipeline().addLast(new ServerHandler(listener));
                                 }
                             });
 
@@ -147,7 +147,7 @@ public class NettyTcpServer {
     }
 
 
-    public void setListener(NettyServerListener listener) {
+    public void setListener(ServerListener listener) {
         this.listener = listener;
     }
 }

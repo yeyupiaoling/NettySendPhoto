@@ -4,7 +4,7 @@ package com.yeyupiaoling.server.listener;
 import io.netty.channel.Channel;
 
 
-public interface NettyServerListener {
+public interface ServerListener {
     /**
      *
      * @param data

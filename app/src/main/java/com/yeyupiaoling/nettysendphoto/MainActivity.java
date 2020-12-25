@@ -5,23 +5,21 @@ import android.content.Intent;
 import android.net.Uri;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
 import com.yeyupiaoling.nettysendphoto.constant.Const;
-import com.yeyupiaoling.nettysendphoto.listener.MessageStateListener;
-import com.yeyupiaoling.nettysendphoto.listener.NettyClientListener;
-import com.yeyupiaoling.nettysendphoto.utils.NettyTcpClientUtil;
+import com.yeyupiaoling.nettysendphoto.listener.ClientListener;
+import com.yeyupiaoling.nettysendphoto.utils.NettyClientUtil;
 
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-public class MainActivity extends AppCompatActivity implements NettyClientListener {
+public class MainActivity extends AppCompatActivity implements ClientListener {
     private static final String TAG = MainActivity.class.getSimpleName();
-    private NettyTcpClientUtil mNettyTcpClientUtil;
+    private NettyClientUtil mNettyClientUtil;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -29,7 +27,7 @@ public class MainActivity extends AppCompatActivity implements NettyClientListen
         setContentView(R.layout.activity_main);
 
 
-        mNettyTcpClientUtil = new NettyTcpClientUtil.Builder()
+        mNettyClientUtil = new NettyClientUtil.Builder()
                 .setHost(Const.HOST)    //设置服务端地址
                 .setTcpPort(Const.TCP_PORT) //设置服务端端口号
                 .setMaxReconnectTimes(5)    //设置最大重连次数
@@ -41,15 +39,15 @@ public class MainActivity extends AppCompatActivity implements NettyClientListen
                 .setIndex(0)    //设置客户端标识.(因为可能存在多个tcp连接)
                 .build();
 
-        mNettyTcpClientUtil.setListener(MainActivity.this); //设置TCP监听
-        mNettyTcpClientUtil.connect();//连接服务器
+        mNettyClientUtil.setListener(MainActivity.this); //设置TCP监听
+        mNettyClientUtil.connect();//连接服务器
 
 
         findViewById(R.id.sendText).setOnClickListener(view -> {
             // 要加上分割符
             String msg = "我是客户端" + System.getProperty("line.separator") ;
             byte[] data = msg.getBytes(StandardCharsets.UTF_8);
-            mNettyTcpClientUtil.sendDataToServer(data, isSuccess -> {
+            mNettyClientUtil.sendDataToServer(data, isSuccess -> {
                 if (isSuccess) {
                     Log.d(TAG, "发送成功");
                 } else {
@@ -78,11 +76,11 @@ public class MainActivity extends AppCompatActivity implements NettyClientListen
                 reader.read(bytes);
                 reader.close();
 
-                mNettyTcpClientUtil.sendDataToServer(bytes, isSuccess -> {
+                mNettyClientUtil.sendDataToServer(bytes, isSuccess -> {
                     if (isSuccess) {
-                        Log.d(TAG, "Write auth successful");
+                        Log.d(TAG, "发送成功");
                     } else {
-                        Log.d(TAG, "Write auth error");
+                        Log.d(TAG, "发送失败");
                     }
                 });
             }catch (Exception e){
@@ -114,7 +112,7 @@ public class MainActivity extends AppCompatActivity implements NettyClientListen
 
     @Override
     protected void onDestroy() {
-        mNettyTcpClientUtil.disconnect();
+        mNettyClientUtil.disconnect();
         super.onDestroy();
     }
 }
