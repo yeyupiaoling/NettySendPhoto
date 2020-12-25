@@ -6,11 +6,21 @@ import io.netty.channel.Channel;
 
 public interface ServerListener {
     /**
+     * 接收到文本消息
      *
      * @param data
      * @param ChannelId unique id
      */
-    void onMessageResponseServer(byte[] data, String ChannelId);
+    void onTextMessage(byte[] data, String ChannelId);
+
+    /**
+     * 接收到图片消息
+     *
+     * @param data
+     * @param ChannelId unique id
+     */
+    void onPhotoMessage(byte[] data, String ChannelId);
+
 
     /**
      * server开启成功

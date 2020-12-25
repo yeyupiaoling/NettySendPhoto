@@ -2,13 +2,15 @@ package com.yeyupiaoling.nettysendphoto.utils;
 
 import android.os.SystemClock;
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 
-import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
+import com.yeyupiaoling.nettysendphoto.constant.Const;
 import com.yeyupiaoling.nettysendphoto.handler.ClientHandler;
-import com.yeyupiaoling.nettysendphoto.listener.MessageStateListener;
 import com.yeyupiaoling.nettysendphoto.listener.ClientListener;
+import com.yeyupiaoling.nettysendphoto.listener.MessageStateListener;
 
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 import io.netty.bootstrap.Bootstrap;
@@ -148,7 +150,7 @@ public class NettyClientUtil {
                     e.printStackTrace();
                 } finally {
                     isConnect = false;
-                    listener.onClientStatusConnectChanged(ConnectState.STATUS_CONNECT_CLOSED, mIndex);
+                    listener.onClientStatusConnectChanged(Const.STATUS_CONNECT_CLOSED, mIndex);
                     if (null != channelFuture) {
                         if (channelFuture.channel() != null && channelFuture.channel().isOpen()) {
                             channelFuture.channel().close();
@@ -180,20 +182,56 @@ public class NettyClientUtil {
     }
 
     /**
-     * 异步发送
+     * 异步发送文本消息
      *
-     * @param data     要发送的数据
+     * @param msg      要发送的数据
      * @param listener 发送结果回调
      */
-    public void sendDataToServer(byte[] data, final MessageStateListener listener) {
-        boolean flag = channel != null && isConnect;
+    public void sendTextToServer(String msg, MessageStateListener listener) {
+        boolean flag = channel != null && channel.isActive();
+        // 要加上分割符
+        msg = msg + Const.PACKET_SEPARATOR;
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+
+        ByteBuf buf = Unpooled.copiedBuffer(data);
         if (flag) {
-            ByteBuf buf = Unpooled.copiedBuffer(data);
             channel.writeAndFlush(buf).addListener((ChannelFutureListener) channelFuture -> {
                 listener.isSendSuccess(channelFuture.isSuccess());
             });
         }
     }
+
+
+    /**
+     * 异步发送图片数据
+     *
+     * @param data     要发送的数据
+     * @param listener 发送结果回调
+     */
+    public void sendPhotoToServer(byte[] data, MessageStateListener listener) {
+        boolean flag = channel != null && channel.isActive();
+        if (flag) {
+            // 将图像打包成Base64的字符串
+            String base64 = Base64.encodeToString(data, Base64.DEFAULT).replace("\n", "");
+            String m = base64 + Const.PACKET_SEPARATOR;
+            byte[] bb = m.getBytes(StandardCharsets.UTF_8);
+
+            // 首先发送通知客户端接下来发生的是图片数据，并告诉大小
+            String msg = "Photo_Size:" + base64.length() + Const.PACKET_SEPARATOR;
+            byte[] d = msg.getBytes(StandardCharsets.UTF_8);
+            ByteBuf b1 = Unpooled.copiedBuffer(d);
+            channel.writeAndFlush(b1).awaitUninterruptibly();
+
+            // 发送图片数据
+            ByteBuf buf = Unpooled.copiedBuffer(bb);
+            channel.writeAndFlush(buf).awaitUninterruptibly();
+
+            listener.isSendSuccess(true);
+            return;
+        }
+        listener.isSendSuccess(false);
+    }
+
 
     public void setListener(ClientListener listener) {
         this.listener = listener;

@@ -1,10 +1,15 @@
 package com.yeyupiaoling.nettysendphoto.handler;
 
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 
-import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
+import com.yeyupiaoling.nettysendphoto.constant.Const;
 import com.yeyupiaoling.nettysendphoto.listener.ClientListener;
+
+import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -22,9 +27,12 @@ public class ClientHandler extends SimpleChannelInboundHandler<byte[]> {
     private final int index;
     private final Object heartBeatData;
     private final String packetSeparator;
+    private boolean isPhoto = false;
+    private int photoSize;
+    private final StringBuffer stringBuffer = new StringBuffer();
 
     public ClientHandler(ClientListener listener, int index, boolean isSendHeartBeat, Object heartBeatData) {
-        this(listener,index,isSendHeartBeat,heartBeatData,null);
+        this(listener, index, isSendHeartBeat, heartBeatData, null);
     }
 
     public ClientHandler(ClientListener listener, int index, boolean isSendHeartBeat, Object heartBeatData, String separator) {
@@ -51,7 +59,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<byte[]> {
                 // 发送心跳
                 if (isSendHeartBeat) {
                     if (heartBeatData == null) {
-                        ctx.channel().writeAndFlush("Heartbeat" + packetSeparator);
+                        ctx.channel().writeAndFlush(Const.HEART_BEAT_DATA + packetSeparator);
                     } else {
                         if (heartBeatData instanceof String) {
                             ctx.channel().writeAndFlush(heartBeatData + packetSeparator);
@@ -77,7 +85,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<byte[]> {
     @Override
     public void channelActive(ChannelHandlerContext ctx) {
         Log.e(TAG, "连接成功");
-        listener.onClientStatusConnectChanged(ConnectState.STATUS_CONNECT_SUCCESS, index);
+        listener.onClientStatusConnectChanged(Const.STATUS_CONNECT_SUCCESS, index);
     }
 
     /**
@@ -94,11 +102,38 @@ public class ClientHandler extends SimpleChannelInboundHandler<byte[]> {
      * 客户端收到消息
      *
      * @param channelHandlerContext ChannelHandlerContext
-     * @param data                   消息
+     * @param data                  消息
      */
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, byte[] data) {
-        listener.onMessageResponseClient(data, index);
+        // 将数据转成字符串
+        String msg = new String(data, StandardCharsets.UTF_8);
+
+        // 匹配获取图片大小
+        Pattern pattern = Pattern.compile(Const.PHOTO_SIZE_TEMPLATE);
+        Matcher matcher = pattern.matcher(msg);
+        // 判断是否能获取图片大小
+        if (matcher.find()) {
+            photoSize = Integer.parseInt(matcher.group(1));
+            isPhoto = true;
+            return;
+        }
+        // 判断本次数据是否为图片数据
+        if (isPhoto) {
+            // 记录图片数据
+            stringBuffer.append(msg);
+            // 当记录的图片书等于指定大小就结束接收图片数据
+            if (stringBuffer.length() == photoSize) {
+                byte[] photo = Base64.decode(stringBuffer.toString(), Base64.DEFAULT);
+                listener.onPhotoMessage(photo, index);
+                photoSize = 0;
+                isPhoto = false;
+                // 清空数据
+                stringBuffer.delete(0, stringBuffer.length());
+            }
+        } else {
+            listener.onTextMessage(data, index);
+        }
     }
 
     /**
@@ -108,7 +143,7 @@ public class ClientHandler extends SimpleChannelInboundHandler<byte[]> {
     @Override
     public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) {
         Log.e(TAG, "发生异常");
-        listener.onClientStatusConnectChanged(ConnectState.STATUS_CONNECT_ERROR, index);
+        listener.onClientStatusConnectChanged(Const.STATUS_CONNECT_ERROR, index);
         cause.printStackTrace();
         ctx.close();
     }

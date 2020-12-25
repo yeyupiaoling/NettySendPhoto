@@ -1,6 +1,7 @@
 package com.yeyupiaoling.server.utils;
 
 import android.text.TextUtils;
+import android.util.Base64;
 import android.util.Log;
 
 import com.yeyupiaoling.server.constant.Const;
@@ -9,6 +10,11 @@ import com.yeyupiaoling.server.listener.MessageStateListener;
 import com.yeyupiaoling.server.listener.ServerListener;
 
 import java.net.InetSocketAddress;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
@@ -42,7 +48,6 @@ public class NettyServerUtil {
     private EventLoopGroup workerGroup;
 
     private final String packetSeparator;
-    private final int maxPacketLong = 1024;
 
 
     public static NettyServerUtil getInstance(String packetSeparator) {
@@ -81,11 +86,10 @@ public class NettyServerUtil {
                                     if (!TextUtils.isEmpty(packetSeparator)) {
                                         ByteBuf delimiter = Unpooled.buffer();
                                         delimiter.writeBytes(packetSeparator.getBytes());
-                                        ch.pipeline().addLast(new DelimiterBasedFrameDecoder(maxPacketLong, delimiter));
+                                        ch.pipeline().addLast(new DelimiterBasedFrameDecoder(Const.MAX_PACKET_LONG, delimiter));
                                     } else {
-                                        ch.pipeline().addLast(new LineBasedFrameDecoder(maxPacketLong));
+                                        ch.pipeline().addLast(new LineBasedFrameDecoder(Const.MAX_PACKET_LONG));
                                     }
-
                                     ch.pipeline().addLast(new ByteArrayEncoder());
                                     ch.pipeline().addLast(new ByteArrayDecoder());
 
@@ -117,24 +121,54 @@ public class NettyServerUtil {
     }
 
     /**
-     * 异步发送
+     * 异步发送文本消息
      *
-     * @param data     要发送的数据
+     * @param msg      要发送的数据
      * @param listener 发送结果回调
      */
-    public void sendDataToClient(byte[] data, MessageStateListener listener) {
+    public void sendTextToClient(String msg, MessageStateListener listener) {
         boolean flag = channel != null && channel.isActive();
+        // 要加上分割符
+        msg = msg + Const.PACKET_SEPARATOR;
+        byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+
         ByteBuf buf = Unpooled.copiedBuffer(data);
         if (flag) {
-            channel.writeAndFlush(buf).addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                    listener.isSendSuccess(channelFuture.isSuccess());
-                }
+            channel.writeAndFlush(buf).addListener((ChannelFutureListener) channelFuture -> {
+                listener.isSendSuccess(channelFuture.isSuccess());
             });
         }
     }
 
+
+    /**
+     * 异步发送图片数据
+     *
+     * @param data     要发送的数据
+     * @param listener 发送结果回调
+     */
+    public void sendPhotoToClient(byte[] data, MessageStateListener listener) {
+        boolean flag = channel != null && channel.isActive();
+        if (flag) {
+            String base64 = Base64.encodeToString(data, Base64.DEFAULT).replace("\n", "");
+            String m = base64 + Const.PACKET_SEPARATOR;
+            byte[] bb = m.getBytes(StandardCharsets.UTF_8);
+
+            // 首先发送通知客户端接下来发生的是图片数据，并告诉大小
+            String msg = "Photo_Size:" + base64.length() + Const.PACKET_SEPARATOR;
+            byte[] d = msg.getBytes(StandardCharsets.UTF_8);
+            ByteBuf b1 = Unpooled.copiedBuffer(d);
+            channel.writeAndFlush(b1).awaitUninterruptibly();
+
+            // 发送图片数据
+            ByteBuf buf = Unpooled.copiedBuffer(bb);
+            channel.writeAndFlush(buf).awaitUninterruptibly();
+
+            listener.isSendSuccess(true);
+            return;
+        }
+        listener.isSendSuccess(false);
+    }
 
     /**
      * 切换通道
