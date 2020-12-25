@@ -3,6 +3,7 @@ package com.yeyupiaoling.server.utils;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.yeyupiaoling.server.constant.Const;
 import com.yeyupiaoling.server.handle.EchoServerHandler;
 import com.yeyupiaoling.server.listener.MessageStateListener;
 import com.yeyupiaoling.server.listener.NettyServerListener;
@@ -33,7 +34,6 @@ import io.netty.handler.codec.bytes.ByteArrayEncoder;
  */
 public class NettyTcpServer {
     private static final String TAG = NettyTcpServer.class.getSimpleName();
-    private final int port = 1088;
     private Channel channel;
 
     private static NettyTcpServer instance = null;
@@ -41,22 +41,23 @@ public class NettyTcpServer {
     private EventLoopGroup bossGroup;
     private EventLoopGroup workerGroup;
 
-    private String packetSeparator;
+    private final String packetSeparator;
     private final int maxPacketLong = 1024;
 
 
-    public static NettyTcpServer getInstance() {
+    public static NettyTcpServer getInstance(String packetSeparator) {
         if (instance == null) {
             synchronized (NettyTcpServer.class) {
                 if (instance == null) {
-                    instance = new NettyTcpServer();
+                    instance = new NettyTcpServer(packetSeparator);
                 }
             }
         }
         return instance;
     }
 
-    private NettyTcpServer() {
+    private NettyTcpServer(String packetSeparator) {
+        this.packetSeparator = packetSeparator;
     }
 
     public void start() {
@@ -70,7 +71,7 @@ public class NettyTcpServer {
                     ServerBootstrap b = new ServerBootstrap();
                     b.group(bossGroup, workerGroup)
                             .channel(NioServerSocketChannel.class)
-                            .localAddress(new InetSocketAddress(port))
+                            .localAddress(new InetSocketAddress(Const.TCP_PORT))
                             .childOption(ChannelOption.SO_KEEPALIVE, true)
                             .childOption(ChannelOption.SO_REUSEADDR, true)
                             .childOption(ChannelOption.TCP_NODELAY, true)

@@ -4,10 +4,10 @@ import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Log;
 
+import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
 import com.yeyupiaoling.nettysendphoto.handler.NettyClientHandler;
 import com.yeyupiaoling.nettysendphoto.listener.MessageStateListener;
 import com.yeyupiaoling.nettysendphoto.listener.NettyClientListener;
-import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
 
 import java.util.concurrent.TimeUnit;
 
@@ -27,10 +27,7 @@ import io.netty.handler.codec.DelimiterBasedFrameDecoder;
 import io.netty.handler.codec.LineBasedFrameDecoder;
 import io.netty.handler.codec.bytes.ByteArrayDecoder;
 import io.netty.handler.codec.bytes.ByteArrayEncoder;
-import io.netty.handler.codec.string.StringDecoder;
-import io.netty.handler.codec.string.StringEncoder;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.CharsetUtil;
 
 
 public class NettyTcpClientUtil {
@@ -104,7 +101,7 @@ public class NettyTcpClientUtil {
                 isConnecting = true;
                 group = new NioEventLoopGroup();
                 Bootstrap bootstrap = new Bootstrap().group(group)
-                        .option(ChannelOption.TCP_NODELAY, true)//屏蔽Nagle算法试图
+                        .option(ChannelOption.TCP_NODELAY, true)  //屏蔽Nagle算法试图
                         .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, 5000)
                         .channel(NioSocketChannel.class)
                         .handler(new ChannelInitializer<SocketChannel>() {
@@ -131,20 +128,17 @@ public class NettyTcpClientUtil {
                         });
 
                 try {
-                    channelFuture = bootstrap.connect(host, tcpPort).addListener(new ChannelFutureListener() {
-                        @Override
-                        public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                            if (channelFuture.isSuccess()) {
-                                Log.e(TAG, "连接成功");
-                                reconnectNum = MAX_CONNECT_TIMES;
-                                isConnect = true;
-                                channel = channelFuture.channel();
-                            } else {
-                                Log.e(TAG, "连接失败");
-                                isConnect = false;
-                            }
-                            isConnecting = false;
+                    channelFuture = bootstrap.connect(host, tcpPort).addListener((ChannelFutureListener) channelFuture1 -> {
+                        if (channelFuture1.isSuccess()) {
+                            Log.e(TAG, "连接成功");
+                            reconnectNum = MAX_CONNECT_TIMES;
+                            isConnect = true;
+                            channel = channelFuture1.channel();
+                        } else {
+                            Log.e(TAG, "连接失败");
+                            isConnect = false;
                         }
+                        isConnecting = false;
                     }).sync();
 
                     // Wait until the connection is closed.
@@ -195,11 +189,8 @@ public class NettyTcpClientUtil {
         boolean flag = channel != null && isConnect;
         if (flag) {
             ByteBuf buf = Unpooled.copiedBuffer(data);
-            channel.writeAndFlush(buf).addListener(new ChannelFutureListener() {
-                @Override
-                public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                    listener.isSendSuccess(channelFuture.isSuccess());
-                }
+            channel.writeAndFlush(buf).addListener((ChannelFutureListener) channelFuture -> {
+                listener.isSendSuccess(channelFuture.isSuccess());
             });
         }
     }

@@ -10,6 +10,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.yeyupiaoling.server.constant.Const;
 import com.yeyupiaoling.server.listener.MessageStateListener;
 import com.yeyupiaoling.server.listener.NettyServerListener;
 import com.yeyupiaoling.server.utils.NettyTcpServer;
@@ -24,7 +25,7 @@ import io.netty.channel.ChannelFutureListener;
 
 public class MainActivity extends AppCompatActivity implements NettyServerListener {
     private static final String TAG = MainActivity.class.getSimpleName();
-    private List<Channel> channelList = new ArrayList<>();
+    private final List<Channel> channelList = new ArrayList<>();
     private AlertDialog alertDialog1;
     private NettyTcpServer nettyTcpServer;
 
@@ -33,37 +34,31 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        nettyTcpServer = NettyTcpServer.getInstance();
+        nettyTcpServer = NettyTcpServer.getInstance(Const.PACKET_SEPARATOR);
         nettyTcpServer.setListener(MainActivity.this);
         nettyTcpServer.start();
 
-        findViewById(R.id.sendText).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // 要加上分割符
-                String msg = "我是服务器端" + System.getProperty("line.separator") ;
-                byte[] data = msg.getBytes(StandardCharsets.UTF_8);
-                NettyTcpServer.getInstance().sendDataToClient(data, new MessageStateListener() {
-                    @Override
-                    public void isSendSuccess(boolean isSuccess) {
-                        if (isSuccess) {
-                            Log.d(TAG, "发送成功");
-                        } else {
-                            Log.d(TAG, "发送失败");
-                        }
+        findViewById(R.id.sendText).setOnClickListener(view -> {
+            // 要加上分割符
+            String msg = "我是服务器端" + System.getProperty("line.separator") ;
+            byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+            NettyTcpServer.getInstance(Const.PACKET_SEPARATOR).sendDataToClient(data, new MessageStateListener() {
+                @Override
+                public void isSendSuccess(boolean isSuccess) {
+                    if (isSuccess) {
+                        Log.d(TAG, "发送成功");
+                    } else {
+                        Log.d(TAG, "发送失败");
                     }
-                });
-            }
+                }
+            });
         });
 
-        findViewById(R.id.sendPhoto).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setType("image/*");
-                intent.setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(intent, 1);
-            }
+        findViewById(R.id.sendPhoto).setOnClickListener(v -> {
+            Intent intent = new Intent();
+            intent.setType("image/*");
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            startActivityForResult(intent, 1);
         });
 
 
@@ -76,12 +71,9 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
                 }
                 AlertDialog.Builder alertBuilder = new AlertDialog.Builder(MainActivity.this);
                 alertBuilder.setTitle("选择客户端");
-                alertBuilder.setItems(items, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialogInterface, int i) {
-                        nettyTcpServer.selectorChannel(channelList.get(i));
-                        alertDialog1.dismiss();
-                    }
+                alertBuilder.setItems(items, (dialogInterface, i) -> {
+                    nettyTcpServer.selectorChannel(channelList.get(i));
+                    alertDialog1.dismiss();
                 });
                 alertDialog1 = alertBuilder.create();
                 alertDialog1.show();
@@ -91,7 +83,7 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
 
     @Override
     protected void onDestroy() {
-        NettyTcpServer.getInstance().disconnect();
+        NettyTcpServer.getInstance(Const.PACKET_SEPARATOR).disconnect();
         super.onDestroy();
     }
 
@@ -99,12 +91,7 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
     public void onMessageResponseServer(byte[] data, String ChannelId) {
         String msg = new String(data, StandardCharsets.UTF_8);
         Log.d(TAG, "接收到的消息：" + msg);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(MainActivity.this, "接收到的消息：" + msg, Toast.LENGTH_SHORT).show();
-            }
-        });
+        runOnUiThread(() -> Toast.makeText(MainActivity.this, "接收到的消息：" + msg, Toast.LENGTH_SHORT).show());
     }
 
     @Override
@@ -122,24 +109,14 @@ public class MainActivity extends AppCompatActivity implements NettyServerListen
         channelList.add(channel);
         nettyTcpServer.selectorChannel(channel);
         String socketStr = channel.remoteAddress().toString();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(MainActivity.this, socketStr + " 建立连接", Toast.LENGTH_SHORT).show();
-            }
-        });
+        runOnUiThread(() -> Toast.makeText(MainActivity.this, socketStr + " 建立连接", Toast.LENGTH_SHORT).show());
     }
 
     @Override
     public void onChannelDisConnect(Channel channel) {
         channelList.remove(channel);
         String socketStr = channel.remoteAddress().toString();
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(MainActivity.this, socketStr + " 断开连接", Toast.LENGTH_SHORT).show();
-            }
-        });
+        runOnUiThread(() -> Toast.makeText(MainActivity.this, socketStr + " 断开连接", Toast.LENGTH_SHORT).show());
     }
 
 }

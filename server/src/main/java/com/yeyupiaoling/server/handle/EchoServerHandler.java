@@ -2,6 +2,7 @@ package com.yeyupiaoling.server.handle;
 
 import android.util.Log;
 
+import com.yeyupiaoling.server.constant.Const;
 import com.yeyupiaoling.server.listener.NettyServerListener;
 import com.yeyupiaoling.server.utils.NettyTcpServer;
 
@@ -51,7 +52,7 @@ public class EchoServerHandler extends SimpleChannelInboundHandler<byte[]> {
     protected void channelRead0(ChannelHandlerContext ctx, byte[] data) throws Exception {
         String msg = new String(data, StandardCharsets.UTF_8);
         // 客户端发送来的心跳数据
-        if (msg.equals("Heartbeat") || msg.equals("心跳数据")) {
+        if (msg.equals("Heartbeat") || msg.equals(Const.PACKET_SEPARATOR)) {
             return;
         }
         mListener.onMessageResponseServer(data, ctx.channel().id().asShortText());

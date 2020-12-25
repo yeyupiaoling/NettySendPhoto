@@ -36,7 +36,8 @@ public class MainActivity extends AppCompatActivity implements NettyClientListen
                 .setReconnectIntervalTime(5)    //设置重连间隔时间。单位：秒
                 .setSendHeartBeat(true) //设置是否发送心跳
                 .setHeartBeatInterval(5)    //设置心跳间隔时间。单位：秒
-                .setHeartBeatData("心跳数据") //设置心跳数据，可以是String类型，也可以是byte[]，以后设置的为准
+                .setHeartBeatData(Const.HEART_BEAT_DATA) //设置心跳数据
+                .setPacketSeparator(Const.PACKET_SEPARATOR)  // 设置包分割符
                 .setIndex(0)    //设置客户端标识.(因为可能存在多个tcp连接)
                 .build();
 
@@ -44,33 +45,24 @@ public class MainActivity extends AppCompatActivity implements NettyClientListen
         mNettyTcpClientUtil.connect();//连接服务器
 
 
-        findViewById(R.id.sendText).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                // 要加上分割符
-                String msg = "我是客户端" + System.getProperty("line.separator") ;
-                byte[] data = msg.getBytes(StandardCharsets.UTF_8);
-                mNettyTcpClientUtil.sendDataToServer(data, new MessageStateListener() {
-                    @Override
-                    public void isSendSuccess(boolean isSuccess) {
-                        if (isSuccess) {
-                            Log.d(TAG, "发送成功");
-                        } else {
-                            Log.d(TAG, "发送失败");
-                        }
-                    }
-                });
-            }
+        findViewById(R.id.sendText).setOnClickListener(view -> {
+            // 要加上分割符
+            String msg = "我是客户端" + System.getProperty("line.separator") ;
+            byte[] data = msg.getBytes(StandardCharsets.UTF_8);
+            mNettyTcpClientUtil.sendDataToServer(data, isSuccess -> {
+                if (isSuccess) {
+                    Log.d(TAG, "发送成功");
+                } else {
+                    Log.d(TAG, "发送失败");
+                }
+            });
         });
 
-        findViewById(R.id.sendPhoto).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                Intent intent = new Intent();
-                intent.setType("image/*");
-                intent.setAction(Intent.ACTION_GET_CONTENT);
-                startActivityForResult(intent, 1);
-            }
+        findViewById(R.id.sendPhoto).setOnClickListener(v -> {
+            Intent intent = new Intent();
+            intent.setType("image/*");
+            intent.setAction(Intent.ACTION_GET_CONTENT);
+            startActivityForResult(intent, 1);
         });
     }
 
@@ -86,14 +78,11 @@ public class MainActivity extends AppCompatActivity implements NettyClientListen
                 reader.read(bytes);
                 reader.close();
 
-                mNettyTcpClientUtil.sendDataToServer(bytes, new MessageStateListener() {
-                    @Override
-                    public void isSendSuccess(boolean isSuccess) {
-                        if (isSuccess) {
-                            Log.d(TAG, "Write auth successful");
-                        } else {
-                            Log.d(TAG, "Write auth error");
-                        }
+                mNettyTcpClientUtil.sendDataToServer(bytes, isSuccess -> {
+                    if (isSuccess) {
+                        Log.d(TAG, "Write auth successful");
+                    } else {
+                        Log.d(TAG, "Write auth error");
                     }
                 });
             }catch (Exception e){
@@ -108,24 +97,16 @@ public class MainActivity extends AppCompatActivity implements NettyClientListen
     public void onMessageResponseClient(byte[] data, int index) {
         String msg = new String(data, StandardCharsets.UTF_8);
         Log.e(TAG, "onMessageResponse:" + msg);
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                Toast.makeText(MainActivity.this, "接收到消息：" + msg, Toast.LENGTH_SHORT).show();
-            }
-        });
+        runOnUiThread(() -> Toast.makeText(MainActivity.this, "接收到消息：" + msg, Toast.LENGTH_SHORT).show());
     }
 
     @Override
     public void onClientStatusConnectChanged(final int statusCode, final int index) {
-        runOnUiThread(new Runnable() {
-            @Override
-            public void run() {
-                if (statusCode == ConnectState.STATUS_CONNECT_SUCCESS) {
-                    Log.e(TAG, "STATUS_CONNECT_SUCCESS:" + index);
-                } else {
-                    Log.e(TAG, "onServiceStatusConnectChanged:" + statusCode);
-                }
+        runOnUiThread(() -> {
+            if (statusCode == ConnectState.STATUS_CONNECT_SUCCESS) {
+                Log.e(TAG, "STATUS_CONNECT_SUCCESS:" + index);
+            } else {
+                Log.e(TAG, "onServiceStatusConnectChanged:" + statusCode);
             }
         });
     }

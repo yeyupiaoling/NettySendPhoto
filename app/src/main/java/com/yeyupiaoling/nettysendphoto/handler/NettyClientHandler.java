@@ -3,10 +3,8 @@ package com.yeyupiaoling.nettysendphoto.handler;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.yeyupiaoling.nettysendphoto.listener.NettyClientListener;
 import com.yeyupiaoling.nettysendphoto.constant.ConnectState;
-
-import java.nio.charset.StandardCharsets;
+import com.yeyupiaoling.nettysendphoto.listener.NettyClientListener;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
