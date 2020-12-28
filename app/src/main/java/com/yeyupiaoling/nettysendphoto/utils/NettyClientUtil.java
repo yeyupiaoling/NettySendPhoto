@@ -38,6 +38,7 @@ public class NettyClientUtil {
     private EventLoopGroup group;
     private ClientListener listener;
     private Channel channel;
+
     private boolean isConnect = false;
 
     /**
@@ -179,6 +180,10 @@ public class NettyClientUtil {
                 connectServer();
             }
         }
+    }
+
+    public boolean getIsConnect() {
+        return isConnect;
     }
 
     /**

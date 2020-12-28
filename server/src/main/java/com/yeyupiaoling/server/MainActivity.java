@@ -56,23 +56,31 @@ public class MainActivity extends AppCompatActivity implements ServerListener {
 
         // 点击按钮发送文本数据
         findViewById(R.id.sendText).setOnClickListener(view -> {
-            // 要发送的数据
-            String msg = "我是服务器端";
-            NettyServerUtil.getInstance(Const.PACKET_SEPARATOR).sendTextToClient(msg, isSuccess -> {
-                if (isSuccess) {
-                    Log.d(TAG, "发送成功");
-                } else {
-                    Log.d(TAG, "发送失败");
-                }
-            });
+            if (!channelList.isEmpty()) {
+                // 要发送的数据
+                String msg = "我是服务器端";
+                NettyServerUtil.getInstance(Const.PACKET_SEPARATOR).sendTextToClient(msg, isSuccess -> {
+                    if (isSuccess) {
+                        Log.d(TAG, "发送成功");
+                    } else {
+                        Log.d(TAG, "发送失败");
+                    }
+                });
+            } else {
+                Toast.makeText(MainActivity.this, "没有客户端连接！", Toast.LENGTH_SHORT).show();
+            }
         });
 
         // 打开相册
         findViewById(R.id.sendPhoto).setOnClickListener(v -> {
-            Intent intent = new Intent();
-            intent.setType("image/*");
-            intent.setAction(Intent.ACTION_GET_CONTENT);
-            startActivityForResult(intent, 1);
+            if (!channelList.isEmpty()) {
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(intent, 1);
+            } else {
+                Toast.makeText(MainActivity.this, "没有客户端连接！", Toast.LENGTH_SHORT).show();
+            }
         });
 
         // 选择客户端发送和接收消息
@@ -106,7 +114,7 @@ public class MainActivity extends AppCompatActivity implements ServerListener {
                 inputStream.close();
 
                 // 判断发送的图片是否过大
-                if (bytes.length > Const.MAX_PACKET_LONG){
+                if (bytes.length > Const.MAX_PACKET_LONG) {
                     Toast.makeText(MainActivity.this, "发送的图片过大", Toast.LENGTH_SHORT).show();
                     return;
                 }

@@ -59,23 +59,31 @@ public class MainActivity extends AppCompatActivity implements ClientListener {
 
         // 点击按钮发送文本数据
         findViewById(R.id.sendText).setOnClickListener(view -> {
-            // 发送的数据
-            String msg = "我是客户端";
-            mNettyClientUtil.sendTextToServer(msg, isSuccess -> {
-                if (isSuccess) {
-                    Log.d(TAG, "发送成功");
-                } else {
-                    Log.d(TAG, "发送失败");
-                }
-            });
+            if (mNettyClientUtil.getIsConnect()) {
+                // 发送的数据
+                String msg = "我是客户端";
+                mNettyClientUtil.sendTextToServer(msg, isSuccess -> {
+                    if (isSuccess) {
+                        Log.d(TAG, "发送成功");
+                    } else {
+                        Log.d(TAG, "发送失败");
+                    }
+                });
+            } else {
+                Toast.makeText(MainActivity.this, "未连接服务端！", Toast.LENGTH_SHORT).show();
+            }
         });
 
         // 打开相册
         findViewById(R.id.sendPhoto).setOnClickListener(v -> {
-            Intent intent = new Intent();
-            intent.setType("image/*");
-            intent.setAction(Intent.ACTION_GET_CONTENT);
-            startActivityForResult(intent, 1);
+            if (mNettyClientUtil.getIsConnect()) {
+                Intent intent = new Intent();
+                intent.setType("image/*");
+                intent.setAction(Intent.ACTION_GET_CONTENT);
+                startActivityForResult(intent, 1);
+            } else {
+                Toast.makeText(MainActivity.this, "未连接服务端！", Toast.LENGTH_SHORT).show();
+            }
         });
     }
 
@@ -93,7 +101,7 @@ public class MainActivity extends AppCompatActivity implements ClientListener {
                 reader.close();
 
                 // 判断发送的图片是否过大
-                if (bytes.length > Const.MAX_PACKET_LONG){
+                if (bytes.length > Const.MAX_PACKET_LONG) {
                     Toast.makeText(MainActivity.this, "发送的图片过大", Toast.LENGTH_SHORT).show();
                     return;
                 }
