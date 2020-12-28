@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.util.Base64;
 import android.util.Log;
 import android.view.View;
 import android.widget.ImageView;
@@ -112,14 +113,15 @@ public class MainActivity extends AppCompatActivity implements ServerListener {
                 byte[] bytes = new byte[inputStream.available()];
                 inputStream.read(bytes);
                 inputStream.close();
+                String base64 = Base64.encodeToString(bytes, Base64.DEFAULT);
 
                 // 判断发送的图片是否过大
-                if (bytes.length > Const.MAX_PACKET_LONG) {
+                if (base64.getBytes(StandardCharsets.UTF_8).length > Const.MAX_PACKET_LONG) {
                     Toast.makeText(MainActivity.this, "发送的图片过大", Toast.LENGTH_SHORT).show();
                     return;
                 }
                 // 执行发送
-                NettyServerUtil.getInstance(Const.PACKET_SEPARATOR).sendPhotoToClient(bytes, isSuccess -> {
+                NettyServerUtil.getInstance(Const.PACKET_SEPARATOR).sendPhotoToClient(base64, isSuccess -> {
                     if (isSuccess) {
                         Log.d(TAG, "发送成功");
                     } else {

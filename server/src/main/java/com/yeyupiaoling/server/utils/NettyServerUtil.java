@@ -144,13 +144,13 @@ public class NettyServerUtil {
     /**
      * 异步发送图片数据
      *
-     * @param data     要发送的数据
-     * @param listener 发送结果回调
+     * @param base64     要发送的数据
+     * @param listener   发送结果回调
      */
-    public void sendPhotoToClient(byte[] data, MessageStateListener listener) {
+    public void sendPhotoToClient(String base64, MessageStateListener listener) {
         boolean flag = channel != null && channel.isActive();
         if (flag) {
-            String base64 = Base64.encodeToString(data, Base64.DEFAULT).replace("\n", "");
+            base64 = base64.replace("\n", "");
             String m = base64 + Const.PACKET_SEPARATOR;
             byte[] bb = m.getBytes(StandardCharsets.UTF_8);
 
